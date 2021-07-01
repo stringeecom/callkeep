@@ -95,6 +95,10 @@ static CXProvider* sharedProvider;
     else if ([@"isCallActive" isEqualToString:method]) {
         result(@([self isCallActive:argsMap[@"uuid"]]));
     }
+    else if ([@"answerIncomingCall" isEqualToString:method]) {
+        [self answerCall:argsMap[@"uuid"]];
+        result(nil);
+    }
     else if ([@"endCall" isEqualToString:method]) {
         [self endCall:argsMap[@"uuid"]];
         result(nil);
@@ -351,6 +355,18 @@ contactIdentifier:(NSString * _Nullable)contactIdentifier
     NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:uuidString];
     CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:uuid];
     CXTransaction *transaction = [[CXTransaction alloc] initWithAction:endCallAction];
+    
+    [self requestTransaction:transaction];
+}
+
+- (void)answerCall:(NSString *)uuidString
+{
+#ifdef DEBUG
+    NSLog(@"[CallKeep][answerCall] uuidString = %@", uuidString);
+#endif
+    NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:uuidString];
+    CXAnswerCallAction *answerCallAction = [[CXAnswerCallAction alloc] initWithCallUUID:uuid];
+    CXTransaction *transaction = [[CXTransaction alloc] initWithAction:answerCallAction];
     
     [self requestTransaction:transaction];
 }
