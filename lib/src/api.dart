@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart'
@@ -246,6 +247,22 @@ class FlutterCallkeep extends EventManager {
   Future<void> setOnHold(String uuid, bool shouldHold) async =>
       await _channel.invokeMethod<void>(
           'setOnHold', <String, dynamic>{'uuid': uuid, 'hold': shouldHold});
+
+  Future<String> reportCallIfNeeded(String callId, int serial,
+  {required String caller, required bool hasVideo}) async {
+      return await _channel.invokeMethod('reportCallIfNeeded', <String, dynamic>{
+          'callId': callId,
+          'serial' : serial,
+          'caller': caller,
+          'hasVideo': hasVideo
+      });
+  }
+
+  Future<void>cleanStringeeCall() async =>
+    _channel.invokeMapMethod("cleanStringeeCall", <String, dynamic>{});
+
+  Future<bool> checkCallAnswered(String uuid) async => await _channel.invokeMethod('checkCallAnswered', <String, dynamic>{'uuid' : uuid}); 
+  Future<bool> checkCallEnded(String uuid) async => await _channel.invokeMethod('checkCallEnded', <String, dynamic>{'uuid' : uuid}); 
 
   Future<void> setReachable() async {
     if (isIOS) {

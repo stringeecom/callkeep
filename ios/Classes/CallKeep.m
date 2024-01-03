@@ -50,10 +50,23 @@ static CXProvider* sharedProvider;
 #ifdef DEBUG
     NSLog(@"[CallKeep][init]");
 #endif
+    NSLog(@"[CallKeep][init]");
     if (self = [super init]) {
         _delayedEvents = [NSMutableArray array];
+        _callMap = [[NSMutableDictionary alloc] init];
+        _callAnswered = [[NSMutableArray alloc] init];
+        _callEnded = [[NSMutableArray alloc] init];
     }
     return self;
+}
+
++ (CallKeep *)instance {
+    static CallKeep *ins = nil;
+    static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            ins = [[CallKeep alloc] init];
+        });
+    return ins;
 }
 
 + (id)allocWithZone:(NSZone *)zone {
@@ -142,6 +155,16 @@ static CXProvider* sharedProvider;
     else if([@"reportUpdatedCall" isEqualToString:method]){
         [self reportUpdatedCall:argsMap[@"uuid"] contactIdentifier:argsMap[@"localizedCallerName"]];
         result(nil);
+    }else if([@"reportCallIfNeeded" isEqualToString:method]) {
+        NSString *uuid = [self reportCallIfNeeded:argsMap[@"callId"] serial:argsMap[@"serial"] callerName:argsMap[@"caller"] hasVideo:[argsMap[@"hasVideo"] isEqual:@(1)]  withCompletionHandler:nil];
+        result(uuid);
+    }else if ([@"checkCallAnswered" isEqualToString:method]) {
+        result(@([self checkCallAnswered:argsMap[@"uuid"]]));
+    }else if ([@"checkCallEnded" isEqualToString: method]) {
+        result(@([self checkCallEnded:argsMap[@"uuid"]]));
+    }else if ([@"cleanStringeeCall" isEqualToString:method]) {
+        [self cleanStringeeCall];
+        result(nil);
     }
     else {
         return NO;
@@ -179,9 +202,6 @@ static CXProvider* sharedProvider;
 
 -(void)setup:(NSDictionary *)options
 {
-#ifdef DEBUG
-    NSLog(@"[CallKeep][setup] options = %@", options);
-#endif
     _version = [[[NSProcessInfo alloc] init] operatingSystemVersion];
     self.callKeepCallController = [[CXCallController alloc] init];
     NSDictionary *settings = [[NSMutableDictionary alloc] initWithDictionary:options];
@@ -190,11 +210,12 @@ static CXProvider* sharedProvider;
     [[NSUserDefaults standardUserDefaults] synchronize];
     
     [CallKeep initCallKitProvider];
-    
     self.callKeepProvider = sharedProvider;
     [self.callKeepProvider setDelegate:self queue:nil];
     [self voipRegistration];
+    NSLog(@"[CallKeep][setup] options = %@", options);
 }
+
 
 #pragma mark - PushKit
 
@@ -203,6 +224,7 @@ static CXProvider* sharedProvider;
     PKPushRegistry* voipRegistry = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
     voipRegistry.delegate = self;
     voipRegistry.desiredPushTypes = [NSSet setWithObject:PKPushTypeVoIP];
+    NSLog(@"[CallKeep][voipRegistration]");
 }
 
 - (void)pushRegistry:(PKPushRegistry *)registry didUpdatePushCredentials:(PKPushCredentials *)pushCredentials forType:(PKPushType)type {
@@ -218,84 +240,108 @@ static CXProvider* sharedProvider;
 }
 
 - (NSString *)createUUID {
-    CFUUIDRef uuidObject = CFUUIDCreate(kCFAllocatorDefault);
-    NSString *uuidStr = (NSString *)CFBridgingRelease(CFUUIDCreateString(kCFAllocatorDefault, uuidObject));
-    CFUUIDBytes bytes = CFUUIDGetUUIDBytes(uuidObject);
-    CFRelease(uuidObject);
-    return [uuidStr lowercaseString];
+    return [NSUUID.UUID.UUIDString lowercaseString];
+}
+
+- (BOOL)checkCallAnswered:(NSString *)uuid {
+    return [CallKeep.instance.callAnswered containsObject:uuid];
+}
+
+- (BOOL)checkCallEnded:(NSString *)uuid {
+    return [CallKeep.instance.callEnded containsObject:uuid];
+}
+ 
+- (void)cleanStringeeCall {
+    _callMap = [[NSMutableDictionary alloc] init];
+    _callAnswered = [[NSMutableArray alloc] init];
+    _callEnded = [[NSMutableArray alloc] init];
+}
+
+- (NSString *)reportCallIfNeeded:(NSString *)callId serial:(NSNumber *)serial callerName: (NSString *)callerName hasVideo:(BOOL)hasVideo withCompletionHandler:(void (^)(void))completion {
+    // create uuid if need
+    
+    NSNumber *checkSerial;
+    if (serial == NULL || serial == 0) {
+        checkSerial = @(1);
+    } else {
+        checkSerial = serial;
+    }
+    
+    NSString *keyId = [[NSString alloc] initWithFormat:@"%@-%@", callId, checkSerial];
+    CXCallObserver *callObs = [[CXCallObserver alloc] init];
+    NSString *uuid = [CallKeep.instance.callMap objectForKey:keyId];
+    if (uuid == nil) {
+        uuid = [self createUUID];
+        [CallKeep.instance.callMap setObject:uuid forKey:keyId];
+    }
+        
+    BOOL didShow = false;
+    for (CXCall *call in callObs.calls) {
+        if ([call.UUID.UUIDString.lowercaseString isEqual:uuid]) {
+            didShow = true;
+        }
+    }
+    
+    for (NSString *callUUID in CallKeep.instance.callEnded) {
+        if ([uuid isEqualToString:callUUID]) {
+            didShow = true;
+        }
+    }
+    
+    if (!didShow) {
+        [CallKeep reportNewIncomingCall:uuid
+                                 handle:@"Stringee"
+                             handleType:@"generic"
+                               hasVideo:hasVideo
+                    localizedCallerName:callerName
+                            fromPushKit:YES
+                                payload:@{
+            @"callId": callId,
+            @"serial": serial,
+            @"hasVideo": @(hasVideo),
+            @"caller": callerName,
+            @"uuid": uuid,
+        }
+                  withCompletionHandler:completion];
+        return uuid;
+    }
+    return uuid;
 }
 
 
 - (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(PKPushType)type withCompletionHandler:(nonnull void (^)(void))completion {
     // Process the received push
     NSLog(@"didReceiveIncomingPushWithPayload payload = %@", payload.type);
-    /* payload example.
-    {
-        "uuid": "xxxxx-xxxxx-xxxxx-xxxxx",
-        "caller_id": "+8618612345678",
-        "caller_name": "hello",
-        "caller_id_type": "number",
-        "has_video": false,
-    }
-    */
 
     NSDictionary *dic = payload.dictionaryPayload[@"data"][@"map"][@"data"][@"map"];
-//
-//    if (dic[@"aps"] != nil) {
-//        NSLog(@"Do not use the 'alert' format for push type %@.", payload.type);
-//        if(completion != nil) {
-//            completion();
-//        }
-//        return;
-//    }
-//
-//    NSString *uuid = dic[@"uuid"];
-//    NSString *callerId = dic[@"caller_id"];
-//    NSString *callerName = dic[@"caller_name"];
-//    BOOL hasVideo = [dic[@"has_video"] boolValue];
-//    NSString *callerIdType = dic[@"caller_id_type"];
-//
-//
-//    if( uuid == nil) {
-//        uuid = [self createUUID];
-//    }
     
     // Sua theo data của Stringee
     NSString *callId = dic[@"callId"] != nil ? dic[@"callId"] : @"";
-    int serial = dic[@"serial"] != nil ? [(NSNumber *)dic[@"serial"] intValue] : 0;
+    int serial = dic[@"serial"] != nil ? [(NSNumber *)dic[@"serial"] intValue] : 1;
     NSString *callStatus = dic[@"callStatus"] != nil ? dic[@"callStatus"] : @"";
     NSString *fromAlias = dic[@"from"][@"map"][@"alias"] != nil ? dic[@"from"][@"map"][@"alias"] : @"";
     NSString *fromNumber = dic[@"from"][@"map"][@"number"] != nil ? dic[@"from"][@"map"][@"number"] : @"";
     NSString *callerName = ![fromAlias isEqual:@""] ? fromAlias : (![fromNumber isEqual:@""] ? fromNumber : @"Connecting...");
-    NSString *uuid = [self createUUID];
+    
+    if (callId == nil || callId.length == 0 || ![callStatus isEqualToString:@"started"]) {
+        // show fake call neu cuoc goi khong den tu StringeeServer
+        NSString *fakeUUID = [self createUUID];
+        [CallKeep reportNewIncomingCall:fakeUUID handle:@"Stringee" handleType:@"generic" hasVideo:false localizedCallerName:@"FakeCall" fromPushKit:true payload:@{} withCompletionHandler:completion];
+        [CallKeep endCallWithUUID:fakeUUID reason:1];
+        return;
+    }
+    
+    NSString *uuid = [self reportCallIfNeeded:callId serial: @(serial) callerName:callerName hasVideo: false withCompletionHandler:completion];
     
     NSMutableDictionary *parseData = [NSMutableDictionary new];
     [parseData setValue:callId forKey:@"callId"];
     [parseData setValue:@(serial) forKey:@"serial"];
     [parseData setValue:callStatus forKey:@"callStatus"];
-    [parseData setValue:uuid forKey:@"uuid"];
-
-    //NSDictionary *extra = payload.dictionaryPayload[@"extra"];
-
-    [CallKeep reportNewIncomingCall:uuid
-                             handle:fromNumber
-                         handleType:@"generic"
-                           hasVideo:false
-                localizedCallerName:callerName
-                        fromPushKit:YES
-                            payload:parseData
-              withCompletionHandler:completion];
+    [parseData setValue: uuid forKey:@"uuid"];
 
     // Ban them su kien khi nhan duoc push
     [self sendEventWithNameWrapper:CallKeepPushKitReceivedNotification body:parseData];
 }
-
-- (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(NSString *)type {
-    [self pushRegistry:registry didReceiveIncomingPushWithPayload:payload forType:type withCompletionHandler:^(){
-        NSLog(@"[CallKeep] received");
-    }];
-}
-
 
 -(void) checkIfBusyWithResult:(FlutterResult)result
 {
@@ -826,6 +872,7 @@ continueUserActivity:(NSUserActivity *)userActivity
 #endif
     [self configureAudioSession];
     [self sendEventWithNameWrapper:CallKeepPerformAnswerCallAction body:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
+    [CallKeep.instance.callAnswered addObject:action.callUUID.UUIDString.lowercaseString];
     [action fulfill];
 }
 
@@ -836,6 +883,7 @@ continueUserActivity:(NSUserActivity *)userActivity
     NSLog(@"[CallKeep][CXProviderDelegate][provider:performEndCallAction]");
 #endif
     [self sendEventWithNameWrapper:CallKeepPerformEndCallAction body:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
+    [CallKeep.instance.callEnded addObject:action.callUUID.UUIDString.lowercaseString];
     [action fulfill];
 }
 
