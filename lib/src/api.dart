@@ -259,7 +259,7 @@ class FlutterCallkeep extends EventManager {
   Future<void> setOnHold(String uuid, bool shouldHold) async =>
       await _channel.invokeMethod<void>(
           'setOnHold', <String, dynamic>{'uuid': uuid, 'hold': shouldHold});
-  
+
   Future<void>cleanStringeeCall() async =>
     _channel.invokeMapMethod("cleanStringeeCall", <String, dynamic>{});
 
