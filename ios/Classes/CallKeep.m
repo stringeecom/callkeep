@@ -54,8 +54,6 @@ static CXProvider* sharedProvider;
     if (self = [super init]) {
         _delayedEvents = [NSMutableArray array];
         _callMap = [[NSMutableDictionary alloc] init];
-        _callAnswered = [[NSMutableArray alloc] init];
-        _callEnded = [[NSMutableArray alloc] init];
     }
     return self;
 }
@@ -155,14 +153,15 @@ static CXProvider* sharedProvider;
     else if([@"reportUpdatedCall" isEqualToString:method]){
         [self reportUpdatedCall:argsMap[@"uuid"] contactIdentifier:argsMap[@"localizedCallerName"]];
         result(nil);
-    }else if([@"reportCallIfNeeded" isEqualToString:method]) {
-        NSString *uuid = [self reportCallIfNeeded:argsMap[@"callId"] serial:argsMap[@"serial"] callerName:argsMap[@"caller"] hasVideo:[argsMap[@"hasVideo"] isEqual:@(1)]  withCompletionHandler:nil];
-        result(uuid);
-    }else if ([@"checkCallAnswered" isEqualToString:method]) {
-        result(@([self checkCallAnswered:argsMap[@"uuid"]]));
-    }else if ([@"checkCallEnded" isEqualToString: method]) {
-        result(@([self checkCallEnded:argsMap[@"uuid"]]));
-    }else if ([@"cleanStringeeCall" isEqualToString:method]) {
+    }
+    else if([@"getCallInfo" isEqualToString:method]) {
+        CallInfo *callInfo = [self getCallInfo:argsMap[@"callId"] serial:argsMap[@"serial"]];
+        result(@{
+            @"uuid" : callInfo.uuid,
+            @"state": callInfo.callState
+        });
+    }
+    else if ([@"cleanStringeeCall" isEqualToString:method]) {
         [self cleanStringeeCall];
         result(nil);
     }
@@ -243,18 +242,26 @@ static CXProvider* sharedProvider;
     return [NSUUID.UUID.UUIDString lowercaseString];
 }
 
-- (BOOL)checkCallAnswered:(NSString *)uuid {
-    return [CallKeep.instance.callAnswered containsObject:uuid];
-}
-
-- (BOOL)checkCallEnded:(NSString *)uuid {
-    return [CallKeep.instance.callEnded containsObject:uuid];
-}
  
 - (void)cleanStringeeCall {
     _callMap = [[NSMutableDictionary alloc] init];
-    _callAnswered = [[NSMutableArray alloc] init];
-    _callEnded = [[NSMutableArray alloc] init];
+}
+
+- (CallInfo *)getCallInfo:(NSString *)callId serial:(NSNumber *)serial {
+    NSNumber *checkSerial;
+    if (serial == NULL || serial == 0) {
+        checkSerial = @(1);
+    } else {
+        checkSerial = serial;
+    }
+    NSString *keyId = [[NSString alloc] initWithFormat:@"%@-%@", callId, checkSerial];
+    CallInfo *callInfo = [CallKeep.instance.callMap objectForKey:keyId];
+    if (callInfo == nil) {
+        callInfo = [[CallInfo alloc] init];
+        callInfo.callState = @(CallStateRinging);
+        [CallKeep.instance.callMap setObject:callInfo forKey:keyId];
+    }
+    return callInfo;
 }
 
 - (NSString *)reportCallIfNeeded:(NSString *)callId serial:(NSNumber *)serial callerName: (NSString *)callerName hasVideo:(BOOL)hasVideo withCompletionHandler:(void (^)(void))completion {
@@ -269,27 +276,23 @@ static CXProvider* sharedProvider;
     
     NSString *keyId = [[NSString alloc] initWithFormat:@"%@-%@", callId, checkSerial];
     CXCallObserver *callObs = [[CXCallObserver alloc] init];
-    NSString *uuid = [CallKeep.instance.callMap objectForKey:keyId];
-    if (uuid == nil) {
-        uuid = [self createUUID];
-        [CallKeep.instance.callMap setObject:uuid forKey:keyId];
+    CallInfo *callInfo = [CallKeep.instance.callMap objectForKey:keyId];
+    if (callInfo == nil) {
+        callInfo = [[CallInfo alloc] init];
+        callInfo.callState = @(CallStateRinging);
+        [CallKeep.instance.callMap setObject:callInfo forKey:keyId];
     }
         
     BOOL didShow = false;
     for (CXCall *call in callObs.calls) {
-        if ([call.UUID.UUIDString.lowercaseString isEqual:uuid]) {
+        if ([call.UUID.UUIDString.lowercaseString isEqual:callInfo.uuid]) {
             didShow = true;
         }
     }
     
-    for (NSString *callUUID in CallKeep.instance.callEnded) {
-        if ([uuid isEqualToString:callUUID]) {
-            didShow = true;
-        }
-    }
     
     if (!didShow) {
-        [CallKeep reportNewIncomingCall:uuid
+        [CallKeep reportNewIncomingCall:callInfo.uuid
                                  handle:@"Stringee"
                              handleType:@"generic"
                                hasVideo:hasVideo
@@ -300,12 +303,12 @@ static CXProvider* sharedProvider;
             @"serial": serial,
             @"hasVideo": @(hasVideo),
             @"caller": callerName,
-            @"uuid": uuid,
+            @"uuid": callInfo.uuid,
         }
                   withCompletionHandler:completion];
-        return uuid;
+        return callInfo.uuid;
     }
-    return uuid;
+    return callInfo.uuid;
 }
 
 
@@ -872,7 +875,11 @@ continueUserActivity:(NSUserActivity *)userActivity
 #endif
     [self configureAudioSession];
     [self sendEventWithNameWrapper:CallKeepPerformAnswerCallAction body:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
-    [CallKeep.instance.callAnswered addObject:action.callUUID.UUIDString.lowercaseString];
+    for (CallInfo * callInfo in  CallKeep.instance.callMap.allValues) {
+        if ([callInfo.uuid isEqualToString:action.callUUID.UUIDString.lowercaseString]) {
+            callInfo.callState = @(CallStateAnswered);
+        }
+    }
     [action fulfill];
 }
 
@@ -883,7 +890,11 @@ continueUserActivity:(NSUserActivity *)userActivity
     NSLog(@"[CallKeep][CXProviderDelegate][provider:performEndCallAction]");
 #endif
     [self sendEventWithNameWrapper:CallKeepPerformEndCallAction body:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
-    [CallKeep.instance.callEnded addObject:action.callUUID.UUIDString.lowercaseString];
+    for (CallInfo * callInfo in  CallKeep.instance.callMap.allValues) {
+        if ([callInfo.uuid isEqualToString:action.callUUID.UUIDString.lowercaseString]) {
+            callInfo.callState = @(CallStateEnded);
+        }
+    }
     [action fulfill];
 }
 
@@ -944,6 +955,20 @@ continueUserActivity:(NSUserActivity *)userActivity
     NSLog(@"[CallKeep][CXProviderDelegate][provider:didDeactivateAudioSession]");
 #endif
     [self sendEventWithNameWrapper:CallKeepDidDeactivateAudioSession body:@{}];
+}
+
+@end
+
+@implementation CallInfo
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        _uuid = [NSUUID.UUID.UUIDString lowercaseString];
+        _callState = @(CallStateNotFound);
+    }
+    return self;
 }
 
 @end

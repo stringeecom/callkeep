@@ -17,6 +17,18 @@ import 'package:flutter/services.dart' show MethodChannel;
 import 'actions.dart';
 import 'event.dart';
 
+enum CallState {
+  notFound,
+  ringing,
+  answered,
+  ended
+}
+
+class CallInfo {
+  String uuid = "";
+  CallState state = CallState.notFound;
+}
+
 bool get isIOS => Platform.isIOS;
 bool get supportConnectionService =>
     !isIOS && int.parse(Platform.version) >= 23;
@@ -260,6 +272,23 @@ class FlutterCallkeep extends EventManager {
 
   Future<void>cleanStringeeCall() async =>
     _channel.invokeMapMethod("cleanStringeeCall", <String, dynamic>{});
+
+  Future<CallInfo> getCallInfo(String callId, int serial) async  {
+    var callInfo = await _channel.invokeMethod('getCallState', <String, dynamic>{'callId' : callId, 'serial' : serial});
+    var status = callInfo["state"];
+    CallInfo info = CallInfo();
+    info.uuid = callInfo["uuid"];
+    if (status == 0) {
+      info.state = CallState.notFound;
+    } else if (status == 1) {
+      info.state = CallState.ringing;
+    } else if (status == 2) {
+      info.state = CallState.answered;
+    } else {
+      info.state = CallState.ended;
+    }
+    return info;
+  }
 
   Future<bool> checkCallAnswered(String uuid) async => await _channel.invokeMethod('checkCallAnswered', <String, dynamic>{'uuid' : uuid}); 
   Future<bool> checkCallEnded(String uuid) async => await _channel.invokeMethod('checkCallEnded', <String, dynamic>{'uuid' : uuid}); 
