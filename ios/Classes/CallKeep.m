@@ -258,7 +258,6 @@ static CXProvider* sharedProvider;
     CallInfo *callInfo = [CallKeep.instance.callMap objectForKey:keyId];
     if (callInfo == nil) {
         callInfo = [[CallInfo alloc] init];
-        callInfo.callState = @(CallStateRinging);
         [CallKeep.instance.callMap setObject:callInfo forKey:keyId];
     }
     return callInfo;
@@ -279,7 +278,6 @@ static CXProvider* sharedProvider;
     CallInfo *callInfo = [CallKeep.instance.callMap objectForKey:keyId];
     if (callInfo == nil) {
         callInfo = [[CallInfo alloc] init];
-        callInfo.callState = @(CallStateRinging);
         [CallKeep.instance.callMap setObject:callInfo forKey:keyId];
     }
         
@@ -290,8 +288,8 @@ static CXProvider* sharedProvider;
         }
     }
     
-    
-    if (!didShow) {
+    if (!didShow && [callInfo.callState isEqualToNumber:@(CallStateNotFound)]) {
+        callInfo.callState = @(CallStateRinging);
         [CallKeep reportNewIncomingCall:callInfo.uuid
                                  handle:@"Stringee"
                              handleType:@"generic"
@@ -967,6 +965,7 @@ continueUserActivity:(NSUserActivity *)userActivity
     if (self) {
         _uuid = [NSUUID.UUID.UUIDString lowercaseString];
         _callState = @(CallStateNotFound);
+        NSLog(@"create call info");
     }
     return self;
 }

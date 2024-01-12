@@ -20,8 +20,8 @@ typedef NS_ENUM(NSInteger, CallState) {
 };
 
 @interface CallInfo : NSObject
-@property (nonatomic, assign, nullable) NSString * uuid;
-@property (nonatomic, assign, nonnull) NSNumber * callState;
+@property (strong, nonatomic, nonnull) NSString * uuid;
+@property (strong, nonatomic, nonnull) NSNumber * callState;
 @end
 
 @interface CallKeep: NSObject<CXProviderDelegate, PKPushRegistryDelegate>
