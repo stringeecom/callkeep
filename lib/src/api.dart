@@ -274,7 +274,7 @@ class FlutterCallkeep extends EventManager {
     _channel.invokeMapMethod("cleanStringeeCall", <String, dynamic>{});
 
   Future<CallInfo> getCallInfo(String callId, int serial) async  {
-    var callInfo = await _channel.invokeMethod('getCallState', <String, dynamic>{'callId' : callId, 'serial' : serial});
+    var callInfo = await _channel.invokeMethod('getCallInfo', <String, dynamic>{'callId' : callId, 'serial' : serial});
     var status = callInfo["state"];
     CallInfo info = CallInfo();
     info.uuid = callInfo["uuid"];
