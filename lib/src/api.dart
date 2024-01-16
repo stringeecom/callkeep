@@ -274,7 +274,7 @@ class FlutterCallkeep extends EventManager {
       info.state = CallState.ringing;
     } else if (status == 2) {
       info.state = CallState.answered;
-    } else {
+    } else if (status == 3) {
       info.state = CallState.ended;
     }
     return info;

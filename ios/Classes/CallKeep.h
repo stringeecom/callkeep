@@ -29,6 +29,7 @@ typedef NS_ENUM(NSInteger, CallState) {
 @property (nonatomic, strong, nullable) CXProvider *callKeepProvider;
 @property (nonatomic, strong, nullable) FlutterMethodChannel* eventChannel;
 @property (nonatomic, strong, nullable) NSMutableDictionary <NSString *, CallInfo *> *callMap;
++ (CallKeep *_Nullable)instance;
 
 - (BOOL)handleMethodCall:(FlutterMethodCall* _Nonnull)call result:(FlutterResult _Nonnull )result;
 

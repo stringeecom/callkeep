@@ -39,6 +39,7 @@ static id _instance;
 #endif
     if (self = [super init]) {
         _callKeep = [CallKeep allocWithZone: nil];
+        [CallKeep instance];
         _callKeep.eventChannel = [FlutterMethodChannel
                                   methodChannelWithName:@"FlutterCallKeep.Event"
                                   binaryMessenger:[registrar messenger]];
@@ -48,9 +49,7 @@ static id _instance;
 
 - (void)dealloc
 {
-#ifdef DEBUG
     NSLog(@"[FlutterCallkeepPlugin][dealloc]");
-#endif
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     _callKeep = nil;
 }
