@@ -18,15 +18,15 @@ import 'actions.dart';
 import 'event.dart';
 
 enum CallState {
-  notFound,
+  callOut,
   ringing,
   answered,
   ended
 }
 
 class CallInfo {
-  String uuid = "";
-  CallState state = CallState.notFound;
+  String? uuid = null;
+  CallState? state = null;
 }
 
 bool get isIOS => Platform.isIOS;
@@ -269,7 +269,7 @@ class FlutterCallkeep extends EventManager {
     CallInfo info = CallInfo();
     info.uuid = callInfo["uuid"];
     if (status == 0) {
-      info.state = CallState.notFound;
+      info.state = CallState.callOut;
     } else if (status == 1) {
       info.state = CallState.ringing;
     } else if (status == 2) {
@@ -278,6 +278,9 @@ class FlutterCallkeep extends EventManager {
       info.state = CallState.ended;
     }
     return info;
+  }
+  Future<String> generateUUID(String callId, int serial) async {
+    return await _channel.invokeMethod('generateUUID', <String, dynamic>{'callId' : callId, 'serial' : serial});
   }
 
   Future<void> setReachable() async {

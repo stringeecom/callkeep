@@ -13,7 +13,7 @@
 #import <PushKit/PushKit.h>
 
 typedef NS_ENUM(NSInteger, CallState) {
-    CallStateNotFound = 0,
+    CallStateCallOut = 0,
     CallStateRinging = 1,
     CallStateAnswered = 2,
     CallStateEnded = 3
@@ -28,7 +28,6 @@ typedef NS_ENUM(NSInteger, CallState) {
 @property (nonatomic, strong, nullable) CXCallController *callKeepCallController;
 @property (nonatomic, strong, nullable) CXProvider *callKeepProvider;
 @property (nonatomic, strong, nullable) FlutterMethodChannel* eventChannel;
-+ (CallKeep *_Nullable)instance;
 @property (nonatomic, strong, nullable) NSMutableDictionary <NSString *, CallInfo *> *callMap;
 
 - (BOOL)handleMethodCall:(FlutterMethodCall* _Nonnull)call result:(FlutterResult _Nonnull )result;

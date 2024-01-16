@@ -24,7 +24,6 @@ static id _instance;
                                                     viewController:viewController
                                                       withTextures:[registrar textures]];
         [registrar addMethodCallDelegate:_instance channel:channel];
-        [CallKeep instance];
     }
 }
 
