@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart'
@@ -15,6 +16,18 @@ import 'package:flutter/services.dart' show MethodChannel;
 
 import 'actions.dart';
 import 'event.dart';
+
+enum CallState {
+  callOut,
+  ringing,
+  answered,
+  ended
+}
+
+class CallInfo {
+  String? uuid = null;
+  CallState? state = null;
+}
 
 bool get isIOS => Platform.isIOS;
 bool get supportConnectionService =>
@@ -246,6 +259,29 @@ class FlutterCallkeep extends EventManager {
   Future<void> setOnHold(String uuid, bool shouldHold) async =>
       await _channel.invokeMethod<void>(
           'setOnHold', <String, dynamic>{'uuid': uuid, 'hold': shouldHold});
+
+  Future<void>cleanStringeeCall() async =>
+    _channel.invokeMapMethod("cleanStringeeCall", <String, dynamic>{});
+
+  Future<CallInfo> getCallInfo(String callId, int serial) async  {
+    var callInfo = await _channel.invokeMethod('getCallInfo', <String, dynamic>{'callId' : callId, 'serial' : serial});
+    var status = callInfo["state"];
+    CallInfo info = CallInfo();
+    info.uuid = callInfo["uuid"];
+    if (status == 0) {
+      info.state = CallState.callOut;
+    } else if (status == 1) {
+      info.state = CallState.ringing;
+    } else if (status == 2) {
+      info.state = CallState.answered;
+    } else if (status == 3) {
+      info.state = CallState.ended;
+    }
+    return info;
+  }
+  Future<String> generateUUID(String callId, int serial) async {
+    return await _channel.invokeMethod('generateUUID', <String, dynamic>{'callId' : callId, 'serial' : serial});
+  }
 
   Future<void> setReachable() async {
     if (isIOS) {

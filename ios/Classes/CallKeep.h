@@ -12,10 +12,24 @@
 #import <Intents/Intents.h>
 #import <PushKit/PushKit.h>
 
+typedef NS_ENUM(NSInteger, CallState) {
+    CallStateCallOut = 0,
+    CallStateRinging = 1,
+    CallStateAnswered = 2,
+    CallStateEnded = 3
+};
+
+@interface CallInfo : NSObject
+@property (strong, nonatomic, nonnull) NSString * uuid;
+@property (strong, nonatomic, nonnull) NSNumber * callState;
+@end
+
 @interface CallKeep: NSObject<CXProviderDelegate, PKPushRegistryDelegate>
 @property (nonatomic, strong, nullable) CXCallController *callKeepCallController;
 @property (nonatomic, strong, nullable) CXProvider *callKeepProvider;
 @property (nonatomic, strong, nullable) FlutterMethodChannel* eventChannel;
+@property (nonatomic, strong, nullable) NSMutableDictionary <NSString *, CallInfo *> *callMap;
++ (CallKeep *_Nullable)instance;
 
 - (BOOL)handleMethodCall:(FlutterMethodCall* _Nonnull)call result:(FlutterResult _Nonnull )result;
 
