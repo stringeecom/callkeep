@@ -102,6 +102,7 @@ public class CallKeepModule {
         VoiceConnectionService.setPhoneAccountHandle(null);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public boolean HandleMethodCall(@NonNull MethodCall call, @NonNull Result result) {
         switch(call.method) {
             case "setup": {
@@ -392,6 +393,7 @@ public class CallKeepModule {
     }
 
     
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void setOnHold(String uuid, boolean shouldHold) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -433,6 +435,7 @@ public class CallKeepModule {
     }
 
     
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void setMutedCall(String uuid, boolean shouldMute) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -452,6 +455,7 @@ public class CallKeepModule {
     }
 
     
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void sendDTMF(String uuid, String key) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -462,6 +466,7 @@ public class CallKeepModule {
     }
 
     
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void updateDisplay(String uuid, String displayName, String uri) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -473,6 +478,7 @@ public class CallKeepModule {
     }
 
     
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void hasPhoneAccount(@NonNull MethodChannel.Result result) {
         if (telecomManager == null) {
             this.initializeTelecomManager();
@@ -502,6 +508,7 @@ public class CallKeepModule {
     }
 
     
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void setCurrentCallActive(String uuid) {
         Connection conn = VoiceConnectionService.getConnection(uuid);
         if (conn == null) {
@@ -566,6 +573,7 @@ public class CallKeepModule {
         result.success(isOpened);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     private void initializeTelecomManager() {
         Context context = this.getAppContext();
         ComponentName cName = new ComponentName(context, VoiceConnectionService.class);
