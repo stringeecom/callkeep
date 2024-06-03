@@ -389,7 +389,7 @@ class FlutterCallkeep extends EventManager {
         emit(CallKeepDidActivateAudioSession());
         break;
       case 'CallKeepDidDeactivateAudioSession':
-        emit(CallKeepDidActivateAudioSession());
+        emit(CallKeepDidDeactivateAudioSession());
         break;
       case 'CallKeepDidDisplayIncomingCall':
         emit(CallKeepDidDisplayIncomingCall.fromMap(data));
