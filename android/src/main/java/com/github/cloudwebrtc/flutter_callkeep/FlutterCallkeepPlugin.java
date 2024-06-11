@@ -2,7 +2,10 @@ package com.github.cloudwebrtc.flutter_callkeep;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -64,6 +67,7 @@ public class FlutterCallkeepPlugin implements FlutterPlugin, MethodCallHandler, 
     startListening(flutterPluginBinding.getApplicationContext(), flutterPluginBinding.getBinaryMessenger());
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.M)
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
     if (!callKeep.HandleMethodCall(call, result)) {

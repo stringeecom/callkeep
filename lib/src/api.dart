@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/services.dart';
+
 import 'package:flutter/material.dart'
     show
         AlertDialog,
@@ -11,12 +11,13 @@ import 'package:flutter/material.dart'
         TextButton,
         Widget,
         showDialog;
-import 'package:flutter/services.dart' show MethodChannel;
+import 'package:flutter/services.dart';
 
 import 'actions.dart';
 import 'event.dart';
 
 bool get isIOS => Platform.isIOS;
+
 bool get supportConnectionService =>
     !isIOS && int.parse(Platform.version) >= 23;
 
@@ -24,9 +25,11 @@ class FlutterCallkeep extends EventManager {
   factory FlutterCallkeep() {
     return _instance;
   }
+
   FlutterCallkeep._internal() {
     _event.setMethodCallHandler(eventListener);
   }
+
   static final FlutterCallkeep _instance = FlutterCallkeep._internal();
   static const MethodChannel _channel = MethodChannel('FlutterCallKeep.Method');
   static const MethodChannel _event = MethodChannel('FlutterCallKeep.Event');
@@ -104,8 +107,8 @@ class FlutterCallkeep extends EventManager {
 
   Future<void> answerIncomingCall(String uuid) async {
     // if (!isIOS) {
-      await _channel.invokeMethod<void>(
-          'answerIncomingCall', <String, dynamic>{'uuid': uuid});
+    await _channel.invokeMethod<void>(
+        'answerIncomingCall', <String, dynamic>{'uuid': uuid});
     // }
   }
 
@@ -386,7 +389,7 @@ class FlutterCallkeep extends EventManager {
         emit(CallKeepDidActivateAudioSession());
         break;
       case 'CallKeepDidDeactivateAudioSession':
-        emit(CallKeepDidActivateAudioSession());
+        emit(CallKeepDidDeactivateAudioSession());
         break;
       case 'CallKeepDidDisplayIncomingCall':
         emit(CallKeepDidDisplayIncomingCall.fromMap(data));
