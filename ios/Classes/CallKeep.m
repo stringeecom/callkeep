@@ -268,7 +268,7 @@ static CXProvider* sharedProvider;
     NSString *fromNumber = dic[@"from"][@"map"][@"number"] != nil ? dic[@"from"][@"map"][@"number"] : @"";
     NSString *callerName = ![fromAlias isEqual:@""] ? fromAlias : (![fromNumber isEqual:@""] ? fromNumber : @"Connecting...");
     NSString *uuid = [self createUUID];
-    BOOL *hasVideo = dic[@"isVideoCall"] == 1;
+    BOOL hasVideo = [dic[@"isVideoCall"] intValue] == 1;
     
     NSMutableDictionary *parseData = [NSMutableDictionary new];
     [parseData setValue:callId forKey:@"callId"];
