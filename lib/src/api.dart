@@ -246,6 +246,27 @@ class FlutterCallkeep extends EventManager {
         'handle': handle
       });
 
+  Future<void> updateCallInfo(
+    String uuid, {
+    String? localizedCallerName,
+    bool? hasVideo,
+    bool? supportHolding,
+    bool? supportsGrouping,
+    bool? supportsUngrouping,
+    bool? supportsDTMF,
+  }) async {
+    var params = <String, dynamic>{'uuid': uuid};
+    if (localizedCallerName != null) {
+      params['localizedCallerName'] = localizedCallerName;
+    }
+    params['hasVideo'] = hasVideo ?? false;
+    params['supportsDTMF'] = supportsDTMF ?? false;
+    params['supportsGrouping'] = supportsGrouping ?? false;
+    params['supportsUngrouping'] = supportsUngrouping ?? false;
+    params['supportHolding'] = supportHolding ?? false;
+    await _channel.invokeMethod<void>('updateCallInfo', params);
+  }
+
   Future<void> setOnHold(String uuid, bool shouldHold) async =>
       await _channel.invokeMethod<void>(
           'setOnHold', <String, dynamic>{'uuid': uuid, 'hold': shouldHold});

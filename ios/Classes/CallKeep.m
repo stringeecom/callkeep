@@ -143,6 +143,9 @@ static CXProvider* sharedProvider;
         [self reportUpdatedCall:argsMap[@"uuid"] contactIdentifier:argsMap[@"localizedCallerName"]];
         result(nil);
     }
+    else if([@"updateCallInfo" isEqualToString:method]) {
+        [self updateCallInfo:argsMap[@"uuid"] localizedCallerName:argsMap[@"localizedCallerName"] hasVideo:[argsMap[@"hasVideo"] boolValue] supportsHolding:[argsMap[@"supportsHolding"] boolValue] supportsGrouping:[argsMap[@"supportsGrouping"] boolValue] supportsUngrouping:[argsMap[@"supportsUngrouping"] boolValue] supportsDTMF:[argsMap[@"supportsDTMF"] boolValue]];
+    }
     else {
         return NO;
     }
@@ -424,6 +427,22 @@ contactIdentifier:(NSString * _Nullable)contactIdentifier
     CXCallUpdate *callUpdate = [[CXCallUpdate alloc] init];
     callUpdate.localizedCallerName = displayName;
     callUpdate.remoteHandle = callHandle;
+    [self.callKeepProvider reportCallWithUUID:uuid updated:callUpdate];
+}
+
+-(void) updateCallInfo:(NSString *)uuidString localizedCallerName:(NSString *) localizedCallerName hasVideo:(BOOL) hasVideo supportsHolding:(BOOL) supportsHolding supportsGrouping:(BOOL) supportsGrouping supportsUngrouping:(BOOL) supportsUngrouping supportsDTMF:(BOOL) supportsDTMF {
+#ifdef DEBUG
+    NSLog(@"[CallKeep][updateCallInfo] localizedCallerName = %@, hasVideo = %d, supportsHolding %d, supportgrouping %d, support ungrouping %d, support dtmf %d", localizedCallerName, hasVideo, supportsHolding, supportsGrouping, supportsUngrouping, supportsDTMF);
+#endif
+    NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:uuidString];
+    CXCallUpdate *callUpdate = [[CXCallUpdate alloc] init];
+    callUpdate.localizedCallerName = localizedCallerName;
+    callUpdate.hasVideo = hasVideo;
+    callUpdate.supportsHolding = supportsHolding;
+    callUpdate.supportsGrouping = supportsGrouping;
+    callUpdate.supportsUngrouping = supportsUngrouping;
+    callUpdate.supportsDTMF = supportsDTMF;
+
     [self.callKeepProvider reportCallWithUUID:uuid updated:callUpdate];
 }
 
