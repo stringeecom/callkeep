@@ -1,9 +1,10 @@
-package io.wazo.callkeep.utils;
+package android.src.main.java.io.wazo.callkeep.utils;
 
 public enum ObjectType {
     Null,
     Boolean,
-    Number,
+    Integer,
+    Double,
     String,
     Map,
     Array,
