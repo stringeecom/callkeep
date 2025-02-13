@@ -1,4 +1,4 @@
-package android.src.main.java.io.wazo.callkeep.utils;
+package io.wazo.callkeep.utils;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class ConstraintsArray {
     }
 
     public ConstraintsArray(ArrayList<Object> array){
-        this.mArray = array;
+     this.mArray = array;
     }
 
     public int size(){
@@ -59,11 +59,9 @@ public class ConstraintsArray {
         } else if (object instanceof Boolean) {
             return ObjectType.Boolean;
         } else if (object instanceof Double ||
-                object instanceof Float) {
-            return ObjectType.Double;
-        } else if (object instanceof Integer ||
-                object instanceof Long) {
-            return ObjectType.Integer;
+                object instanceof Float ||
+                object instanceof Integer) {
+            return ObjectType.Number;
         } else if (object instanceof String) {
             return ObjectType.String;
         } else if (object instanceof ArrayList) {

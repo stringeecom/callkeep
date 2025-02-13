@@ -1,4 +1,4 @@
-package android.src.main.java.io.wazo.callkeep.utils;
+package io.wazo.callkeep.utils;
 
 import android.app.Activity;
 import android.app.Fragment;

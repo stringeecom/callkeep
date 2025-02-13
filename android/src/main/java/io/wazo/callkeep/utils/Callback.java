@@ -1,6 +1,6 @@
-package android.src.main.java.io.wazo.callkeep.utils;
+package io.wazo.callkeep.utils;
 
-public interface Callback<Arg> {
+public interface Callback {
 
-    void invoke(Arg arg);
+    void invoke(Object... args);
 }
