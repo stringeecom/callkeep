@@ -27,3 +27,5 @@ Flutter_Plugins.xml
 misc.xml
 modules.xml
 
+android/.idea/
+.idea/
