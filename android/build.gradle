@@ -26,20 +26,15 @@ android {
         namespace = "com.github.cloudwebrtc.flutter_callkeep"
     }
 
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         minSdk 21
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-
-    dependencies {
-        testImplementation("junit:junit:4.13.2")
-        testImplementation("org.mockito:mockito-core:5.0.0")
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     testOptions {
