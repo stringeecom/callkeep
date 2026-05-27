@@ -1,5 +1,3 @@
-include: package:pedantic/analysis_options.yaml
-
 linter:
   rules:
     - always_declare_return_types
@@ -30,7 +28,7 @@ linter:
     - use_rethrow_when_possible
     - valid_regexps
     - void_checks
-  
+
 analyzer:
   errors:
     # treat missing required parameters as a warning (not a hint)
@@ -42,7 +40,3 @@ analyzer:
     # allow self-reference to deprecated members (we do this because otherwise we have
     # to annotate every member in every test, assert, etc, when we deprecate something)
     deprecated_member_use_from_same_package: ignore
-    # Ignore analyzer hints for updating pubspecs when using Future or
-    # Stream and not importing dart:async
-    # Please see https://github.com/flutter/flutter/pull/24528 for details.
-    sdk_version_async_exported_from_core: ignore

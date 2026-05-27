@@ -8,7 +8,7 @@
 #import <objc/runtime.h>
 #import <AVFoundation/AVFoundation.h>
 
-#import "CallKeep.h"
+#import "./include/callkeep/CallKeep.h"
 
 static NSString *const CallKeepHandleStartCallNotification = @"CallKeepHandleStartCallNotification";
 static NSString *const CallKeepDidReceiveStartCallAction = @"CallKeepDidReceiveStartCallAction";

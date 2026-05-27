@@ -32,7 +32,7 @@ Future<dynamic>? myBackgroundMessageHandler(Map<String, dynamic> message) {
   var uuid = payload['uuid'] as String;
   var hasVideo = payload['has_video'] == 'true';
 
-  final callUUID = uuid ?? Uuid().v4();
+  final callUUID = uuid;
   _callKeep.on(CallKeepPerformAnswerCallAction(),
       (CallKeepPerformAnswerCallAction event) {
     print(
